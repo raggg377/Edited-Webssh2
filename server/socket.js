@@ -11,7 +11,7 @@ const CIDRMatcher = require('cidr-matcher');
 const validator = require('validator');
 const dnsPromises = require('dns').promises;
 const util = require('util');
-const { webssh2debug,  logError } = require('./logging');
+const { webssh2debug} = require('./logging');
 
 /**
  * parse conn errors
@@ -32,7 +32,7 @@ function connError(socket, err) {
   if (err?.level === 'client-timeout') {
     msg = `Connection Timeout: ${session.ssh.host}`;
   }
-  logError(socket, 'CONN ERROR', msg);
+  
 }
 
 /**
@@ -46,11 +46,6 @@ async function checkSubnet(socket) {
       const result = await dnsPromises.lookup(socket.request.session.ssh.host);
       ipaddress = result.address;
     } catch (err) {
-      logError(
-        socket,
-        'CHECK SUBNET',
-        `${err.code}: ${err.hostname} user=${socket.request.session.username} from=${socket.handshake.address}`
-      );
       socket.emit('ssherror', '404 HOST IP NOT FOUND');
       socket.disconnect(true);
       return;
@@ -59,11 +54,6 @@ async function checkSubnet(socket) {
 
   const matcher = new CIDRMatcher(socket.request.session.ssh.allowedSubnets);
   if (!matcher.contains(ipaddress)) {
-    logError(
-      socket,
-      'CHECK SUBNET',
-      `Requested host ${ipaddress} outside configured subnets / REJECTED user=${socket.request.session.username} from=${socket.handshake.address}`
-    );
     socket.emit('ssherror', '401 UNAUTHORIZED');
     socket.disconnect(true);
   }
@@ -125,7 +115,6 @@ module.exports = function appSocket(socket) {
       const { term, cols, rows } = socket.request.session.ssh;
       conn.shell({ term, cols, rows }, (err, stream) => {
         if (err) {
-          logError(socket, `EXEC ERROR`, err);
           conn.end();
           socket.disconnect(true);
           return;
@@ -137,7 +126,6 @@ module.exports = function appSocket(socket) {
         });
         socket.on('error', (errMsg) => {
           webssh2debug(socket, `SOCKET ERROR: ${errMsg}`);
-          logError(socket, 'SOCKET ERROR', errMsg);
           conn.end();
           socket.disconnect(true);
         });
@@ -168,7 +156,6 @@ module.exports = function appSocket(socket) {
             login = false;
           }
           if (code !== 0 && typeof code !== 'undefined')
-            logError(socket, 'STREAM CLOSE', util.inspect({ message: [code, signal] }));
           socket.disconnect(true);
           conn.end();
         });
@@ -179,12 +166,11 @@ module.exports = function appSocket(socket) {
     });
 
     conn.on('end', (err) => {
-      if (err) logError(socket, 'CONN END BY HOST', err);
       webssh2debug(socket, 'CONN END BY HOST');
       socket.disconnect(true);
     });
     conn.on('close', (err) => {
-      if (err) logError(socket, 'CONN CLOSE', err);
+      if (err) 
       webssh2debug(socket, 'CONN CLOSE');
       socket.disconnect(true);
     });
