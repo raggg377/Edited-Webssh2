@@ -94,7 +94,6 @@ const onConnection = (socket) => {
     }
   });
   socket.on('geometry', (cols, rows) => {
-    // TODO need to rework how we pass settings to ssh2, this is less than ideal
     socket.request.session.ssh.terminfo = { cols, rows };
     
   });
