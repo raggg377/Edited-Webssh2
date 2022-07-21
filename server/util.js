@@ -1,7 +1,8 @@
-/* jshint esversion: 6, asi: true, node: true */
-// util.js
+// 3 Function:
+// a. setDefaultCredentials sets credentials
+// b. basicAuth checks for authorization
+// c. parseBool checks if string==true
 
-// private
 const debug = require('debug')('WebSSH2');
 const Auth = require('basic-auth');
 
@@ -41,7 +42,6 @@ exports.basicAuth = function basicAuth(req, res, next) {
   next();
 };
 
-// takes a string, makes it boolean (true if the string is true, false otherwise)
 exports.parseBool = function parseBool(str) {
   return str.toLowerCase() === 'true';
 };
