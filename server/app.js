@@ -1,9 +1,3 @@
-/* jshint esversion: 6, asi: true, node: true */
-/* eslint no-unused-expressions: ["error", { "allowShortCircuit": true, "allowTernary": true }],
-   no-console: ["error", { allow: ["warn", "error", "info"] }] */
-// app.js
-
-// eslint-disable-next-line import/order
 const config = require('./config');
 const path = require('path');
 
