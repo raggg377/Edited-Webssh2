@@ -1,5 +1,14 @@
-/* eslint no-unused-expressions: ["error", { "allowShortCircuit": true, "allowTernary": true }],
-   no-console: ["error", { allow: ["warn", "error", "info"] }] */
+// Basic config file defines:
+// a. Listening at ip and port
+// b. Socket.io setup
+// c. Express setup
+// d. User variables(psswd,host)
+// e. Ssh variables
+// f. terminal variables
+// g. Header and buttons
+// h. ciphers and algorithms
+// Finally a try and catch block to check if config file is present or not
+
 const fs = require('fs');
 const path = require('path');
 const merger = require('json-merger');
@@ -12,7 +21,6 @@ const nodeRoot = path.dirname(require.main.filename);
 const configPath = path.join(nodeRoot, 'config.json');
 
 let myConfig;
-// establish defaults
 const configDefault = {
   listen: {
     ip: '0.0.0.0',
@@ -100,7 +108,6 @@ const configDefault = {
   safeShutdownDuration: 300,
 };
 
-// test if config.json exists, if not provide error message but try to run anyway
 try {
   if (!fs.existsSync(configPath)) {
     console.error(
