@@ -11,7 +11,6 @@ const CIDRMatcher = require('cidr-matcher');
 const validator = require('validator');
 const dnsPromises = require('dns').promises;
 const util = require('util');
-const { webssh2debug} = require('./logging');
 
 /**
  * parse conn errors
@@ -64,7 +63,7 @@ module.exports = function appSocket(socket) {
   let login = false;
 
   socket.once('disconnecting', (reason) => {
-    webssh2debug(socket, `SOCKET DISCONNECTING: ${reason}`);
+    
     if (login === true) {
       login = false;
     }
@@ -74,7 +73,6 @@ module.exports = function appSocket(socket) {
     // if websocket connection arrives without an express session, kill it
     if (!socket.request.session) {
       socket.emit('401 UNAUTHORIZED');
-      webssh2debug(socket, 'SOCKET: No Express Session / REJECTED');
       socket.disconnect(true);
       return;
     }
@@ -92,10 +90,6 @@ module.exports = function appSocket(socket) {
     });
 
     conn.on('ready', () => {
-      webssh2debug(
-        socket,
-        `CONN READY: LOGIN: user=${socket.request.session.username} from=${socket.handshake.address} host=${socket.request.session.ssh.host} port=${socket.request.session.ssh.port} allowreplay=${socket.request.session.ssh.allowreplay} term=${socket.request.session.ssh.term}`
-      );
       login = true;
       socket.emit('menu');
       socket.emit('allowreauth', socket.request.session.ssh.allowreauth);
@@ -120,12 +114,10 @@ module.exports = function appSocket(socket) {
           return;
         }
         socket.once('disconnect', (reason) => {
-          webssh2debug(socket, `CLIENT SOCKET DISCONNECT: ${util.inspect(reason)}`);
           conn.end();
           socket.request.session.destroy();
         });
         socket.on('error', (errMsg) => {
-          webssh2debug(socket, `SOCKET ERROR: ${errMsg}`);
           conn.end();
           socket.disconnect(true);
         });
@@ -138,11 +130,9 @@ module.exports = function appSocket(socket) {
             conn.end();
             socket.disconnect(true);
           }
-          webssh2debug(socket, `SOCKET CONTROL: ${controlData}`);
         });
         socket.on('resize', (data) => {
           stream.setWindow(data.rows, data.cols);
-          webssh2debug(socket, `SOCKET RESIZE: ${JSON.stringify([data.rows, data.cols])}`);
         });
         socket.on('data', (data) => {
           stream.write(data);
@@ -151,7 +141,6 @@ module.exports = function appSocket(socket) {
           socket.emit('data', data.toString('utf-8'));
         });
         stream.on('close', (code, signal) => {
-          webssh2debug(socket, `STREAM CLOSE: ${util.inspect([code, signal])}`);
           if (socket.request.session?.username && login === true) {
             login = false;
           }
@@ -166,18 +155,15 @@ module.exports = function appSocket(socket) {
     });
 
     conn.on('end', (err) => {
-      webssh2debug(socket, 'CONN END BY HOST');
       socket.disconnect(true);
     });
     conn.on('close', (err) => {
       if (err) 
-      webssh2debug(socket, 'CONN CLOSE');
       socket.disconnect(true);
     });
     conn.on('error', (err) => connError(socket, err));
 
     conn.on('keyboard-interactive', (_name, _instructions, _instructionsLang, _prompts, finish) => {
-      webssh2debug(socket, 'CONN keyboard-interactive');
       finish([socket.request.session.userpassword]);
     });
     if (
@@ -193,12 +179,6 @@ module.exports = function appSocket(socket) {
       ssh.debug = debug('ssh2');
       conn.connect(ssh);
     } else {
-      webssh2debug(
-        socket,
-        `CONN CONNECT: Attempt to connect without session.username/password or session varialbles defined, potentially previously abandoned client session. disconnecting websocket client.\r\nHandshake information: \r\n  ${util.inspect(
-          socket.handshake
-        )}`
-      );
       socket.emit('ssherror', 'WEBSOCKET ERROR - Refresh the browser and try again');
       socket.request.session.destroy();
       socket.disconnect(true);
