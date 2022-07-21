@@ -1,5 +1,3 @@
-/* eslint-disable no-console */
-// ssh.js
 const validator = require('validator');
 const path = require('path');
 
