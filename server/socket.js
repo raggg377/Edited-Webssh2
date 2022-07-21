@@ -11,7 +11,7 @@ const CIDRMatcher = require('cidr-matcher');
 const validator = require('validator');
 const dnsPromises = require('dns').promises;
 const util = require('util');
-const { webssh2debug, auditLog, logError } = require('./logging');
+const { webssh2debug,  logError } = require('./logging');
 
 /**
  * parse conn errors
@@ -76,10 +76,6 @@ module.exports = function appSocket(socket) {
   socket.once('disconnecting', (reason) => {
     webssh2debug(socket, `SOCKET DISCONNECTING: ${reason}`);
     if (login === true) {
-      auditLog(
-        socket,
-        `LOGOUT user=${socket.request.session.username} from=${socket.handshake.address} host=${socket.request.session.ssh.host}:${socket.request.session.ssh.port}`
-      );
       login = false;
     }
   });
@@ -109,10 +105,6 @@ module.exports = function appSocket(socket) {
       webssh2debug(
         socket,
         `CONN READY: LOGIN: user=${socket.request.session.username} from=${socket.handshake.address} host=${socket.request.session.ssh.host} port=${socket.request.session.ssh.port} allowreplay=${socket.request.session.ssh.allowreplay} term=${socket.request.session.ssh.term}`
-      );
-      auditLog(
-        socket,
-        `LOGIN user=${socket.request.session.username} from=${socket.handshake.address} host=${socket.request.session.ssh.host}:${socket.request.session.ssh.port}`
       );
       login = true;
       socket.emit('menu');
@@ -154,10 +146,6 @@ module.exports = function appSocket(socket) {
             stream.write(`${socket.request.session.userpassword}\n`);
           }
           if (controlData === 'reauth' && socket.request.session.username && login === true) {
-            auditLog(
-              socket,
-              `LOGOUT user=${socket.request.session.username} from=${socket.handshake.address} host=${socket.request.session.ssh.host}:${socket.request.session.ssh.port}`
-            );
             login = false;
             conn.end();
             socket.disconnect(true);
@@ -177,10 +165,6 @@ module.exports = function appSocket(socket) {
         stream.on('close', (code, signal) => {
           webssh2debug(socket, `STREAM CLOSE: ${util.inspect([code, signal])}`);
           if (socket.request.session?.username && login === true) {
-            auditLog(
-              socket,
-              `LOGOUT user=${socket.request.session.username} from=${socket.handshake.address} host=${socket.request.session.ssh.host}:${socket.request.session.ssh.port}`
-            );
             login = false;
           }
           if (code !== 0 && typeof code !== 'undefined')
